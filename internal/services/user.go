@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/MrTomatePNG/webflix/internal/database"
-	"github.com/MrTomatePNG/webflix/internal/dto"
+	"github.com/MrTomatePNG/projeto-m/internal/database"
+	"github.com/MrTomatePNG/projeto-m/internal/dto"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
 )
