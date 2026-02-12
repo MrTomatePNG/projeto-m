@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/MrTomatePNG/webflix/internal/database"
-	"github.com/MrTomatePNG/webflix/internal/handlers"
+	"github.com/MrTomatePNG/projeto-m/internal/database"
+	"github.com/MrTomatePNG/projeto-m/internal/handlers"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
