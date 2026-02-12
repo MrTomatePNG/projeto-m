@@ -1,4 +1,4 @@
-module github.com/MrTomatePNG/webflix
+module github.com/MrTomatePNG/projeto-m
 
 go 1.25.5
 

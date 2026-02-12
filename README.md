@@ -1,5 +1,5 @@
 
-#  MemeDroid (videoloader) Backend
+#  MemeDroid  Backend
 
 **MemeDroid** é o backend para uma plataforma de rede social focada em mídia (memes/vídeos), construída com Go.
 

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/MrTomatePNG/webflix/internal/database"
-	"github.com/MrTomatePNG/webflix/internal/services"
+	"github.com/MrTomatePNG/projeto-m/internal/database"
+	"github.com/MrTomatePNG/projeto-m/internal/services"
 	"github.com/go-playground/validator/v10"
 	"golang.org/x/crypto/bcrypt"
 )
