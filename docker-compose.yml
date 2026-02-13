@@ -9,7 +9,7 @@ services:
     # Variáveis de ambiente que configuram o Postgres
     environment:
       # Nome do banco que será criado automaticamente
-      POSTGRES_DB: iffuny_droid
+      POSTGRES_DB: projeto-m
       # Usuário padrão (postgres é o default)
       POSTGRES_USER: dev
       # Senha - NUNCA use essa em produção!
@@ -20,13 +20,8 @@ services:
     ports:
       - "5432:5432"
 
-    # Volume para persistir os dados mesmo se derrubar o container
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./sql/initdb:/docker-entrypoint-initdb.d:ro
 
     # Reinicia automaticamente se o container cair
     restart: unless-stopped
-
-# Define o volume nomeado para persistência
-volumes:
-  postgres_data:
