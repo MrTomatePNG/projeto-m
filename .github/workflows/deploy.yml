@@ -1,0 +1,35 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: 154.29.76.170
+          username: mrtomate
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            cd /opt/projeto-m
+            git pull origin main
+
+            # Build frontend
+            cd client
+            bun install
+            bun run build
+            cd ..
+
+            # Build backend
+            go build -o backend ./cmd/api
+
+            # Restart service
+            sudo systemctl restart projeto-m
