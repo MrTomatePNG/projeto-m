@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 cd /opt/projeto-m
 git config --global --add safe.directory /opt/projeto-m
