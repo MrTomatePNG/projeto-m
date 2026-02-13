@@ -16,7 +16,7 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: 154.29.76.170
-          username: mrtomate
+          username: projeto-m
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
             cd /opt/projeto-m
