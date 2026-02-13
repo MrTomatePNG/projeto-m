@@ -21,23 +21,8 @@ jobs:
           script: |
             export PATH=$PATH:/usr/local/go/bin:$HOME/.bun/bin
             cd /opt/projeto-m
-            git config --global --add safe.directory /opt/projeto-m
-            git pull origin main
-
-            # Build frontend
-            cd client
-            bun install
-            bun run build
-            cd ..
-
-            # Build backend
-            go build -o backend ./cmd/api
-
-            # Copy Caddyfile
-            sudo cp Caddyfile /etc/caddy/Caddyfile
-
-            # Reload Caddy
-            sudo systemctl reload caddy
-
-            # Restart backend service
-            sudo systemctl restart projeto-m
+            bash scripts/deploy_pull.sh
+            bash scripts/deploy_frontend.sh
+            bash scripts/deploy_backend.sh
+            bash scripts/deploy_caddy.sh
+            bash scripts/deploy_restart_services.sh

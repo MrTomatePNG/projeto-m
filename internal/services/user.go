@@ -81,3 +81,15 @@ func (s *UserService) GetUserByEmail(email string) (*database.User, error) {
 
 	return &user, nil
 }
+
+func (s *UserService) GetUserByID(id int64) (*database.User, error) {
+	user, err := s.db.GetUserByID(s.ctx, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user not found: %d", id)
+		}
+		return nil, fmt.Errorf("internal server error")
+	}
+
+	return &user, nil
+}

@@ -5,7 +5,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/MrTomatePNG/projeto-m/internal/auth"
 	"github.com/MrTomatePNG/projeto-m/internal/database"
+	"github.com/MrTomatePNG/projeto-m/internal/middleware"
 	"github.com/MrTomatePNG/projeto-m/internal/services"
 	"github.com/go-playground/validator/v10"
 	"golang.org/x/crypto/bcrypt"
@@ -14,13 +16,15 @@ import (
 type UserHandler struct {
 	s        *services.UserService
 	validate *validator.Validate
+	jwtm     *auth.JWTManager
 }
 
-func NewUserHandler(db *database.Queries) *UserHandler {
+func NewUserHandler(db *database.Queries, jwtm *auth.JWTManager) *UserHandler {
 	s := services.NewUserService(db)
 	return &UserHandler{
 		s:        s,
 		validate: validator.New(),
+		jwtm:     jwtm,
 	}
 }
 
@@ -121,10 +125,44 @@ func (h *UserHandler) Login() http.HandlerFunc {
 			return
 		}
 
+		token, err := h.jwtm.Generate(user.ID)
+		if err != nil {
+			h.respondJSON(w, http.StatusInternalServerError, map[string]string{
+				"error": "Erro ao gerar token",
+			})
+			return
+		}
+
 		// Login bem-sucedido
 		h.respondJSON(w, http.StatusOK, map[string]interface{}{
-			"message": "Login bem-sucedido",
-			"user_id": user.ID,
+			"message":      "Login bem-sucedido",
+			"access_token": token,
+		})
+	}
+}
+
+func (h *UserHandler) Me() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := middleware.UserIDFromContext(r.Context())
+		if !ok {
+			h.respondJSON(w, http.StatusUnauthorized, map[string]string{
+				"error": "Unauthorized",
+			})
+			return
+		}
+
+		user, err := h.s.GetUserByID(userID)
+		if err != nil {
+			h.respondJSON(w, http.StatusInternalServerError, map[string]string{
+				"error": "Erro ao buscar usuário",
+			})
+			return
+		}
+
+		h.respondJSON(w, http.StatusOK, map[string]interface{}{
+			"id":       user.ID,
+			"username": user.Username,
+			"bio":      user.Bio.String,
 		})
 	}
 }

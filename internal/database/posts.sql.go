@@ -41,6 +41,165 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 	return i, err
 }
 
+const getPendingPosts = `-- name: GetPendingPosts :many
+SELECT id, user_id, comment, media_hash, media_type, media_url, thumb_url, status, created_at, updated_at FROM posts
+WHERE status = 'pending'
+ORDER BY created_at ASC
+LIMIT $1
+`
+
+func (q *Queries) GetPendingPosts(ctx context.Context, limit int32) ([]Post, error) {
+	rows, err := q.db.Query(ctx, getPendingPosts, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Post
+	for rows.Next() {
+		var i Post
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Comment,
+			&i.MediaHash,
+			&i.MediaType,
+			&i.MediaUrl,
+			&i.ThumbUrl,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getPostByID = `-- name: GetPostByID :one
+SELECT p.id, p.user_id, p.comment, p.media_hash, p.media_type, p.media_url, p.thumb_url, p.status, p.created_at, p.updated_at, u.username as author_name
+FROM posts p
+JOIN users u ON p.user_id = u.id
+WHERE p.id = $1
+`
+
+type GetPostByIDRow struct {
+	ID         int64            `json:"id"`
+	UserID     int64            `json:"user_id"`
+	Comment    pgtype.Text      `json:"comment"`
+	MediaHash  string           `json:"media_hash"`
+	MediaType  string           `json:"media_type"`
+	MediaUrl   pgtype.Text      `json:"media_url"`
+	ThumbUrl   pgtype.Text      `json:"thumb_url"`
+	Status     PostStatus       `json:"status"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
+	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
+	AuthorName string           `json:"author_name"`
+}
+
+func (q *Queries) GetPostByID(ctx context.Context, id int64) (GetPostByIDRow, error) {
+	row := q.db.QueryRow(ctx, getPostByID, id)
+	var i GetPostByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Comment,
+		&i.MediaHash,
+		&i.MediaType,
+		&i.MediaUrl,
+		&i.ThumbUrl,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.AuthorName,
+	)
+	return i, err
+}
+
+const getPostsByUserID = `-- name: GetPostsByUserID :many
+SELECT id, user_id, comment, media_hash, media_type, media_url, thumb_url, status, created_at, updated_at FROM posts
+WHERE user_id = $1 AND status = 'completed'
+ORDER BY created_at DESC
+LIMIT $2
+`
+
+type GetPostsByUserIDParams struct {
+	UserID int64 `json:"user_id"`
+	Limit  int32 `json:"limit"`
+}
+
+func (q *Queries) GetPostsByUserID(ctx context.Context, arg GetPostsByUserIDParams) ([]Post, error) {
+	rows, err := q.db.Query(ctx, getPostsByUserID, arg.UserID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Post
+	for rows.Next() {
+		var i Post
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Comment,
+			&i.MediaHash,
+			&i.MediaType,
+			&i.MediaUrl,
+			&i.ThumbUrl,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getProcessingPosts = `-- name: GetProcessingPosts :many
+SELECT id, user_id, comment, media_hash, media_type, media_url, thumb_url, status, created_at, updated_at FROM posts
+WHERE status = 'processing'
+AND updated_at < NOW() - INTERVAL '30 minutes'
+ORDER BY updated_at ASC
+`
+
+func (q *Queries) GetProcessingPosts(ctx context.Context) ([]Post, error) {
+	rows, err := q.db.Query(ctx, getProcessingPosts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Post
+	for rows.Next() {
+		var i Post
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Comment,
+			&i.MediaHash,
+			&i.MediaType,
+			&i.MediaUrl,
+			&i.ThumbUrl,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPostsWithTags = `-- name: ListPostsWithTags :many
 SELECT
     p.id,
@@ -109,18 +268,44 @@ func (q *Queries) ListPostsWithTags(ctx context.Context, arg ListPostsWithTagsPa
 	return items, nil
 }
 
-const updataPostProgress = `-- name: UpdataPostProgress :exec
+const updatePostMedia = `-- name: UpdatePostMedia :exec
+UPDATE posts
+SET media_url = $2, 
+    thumb_url = $3,
+    status = $4,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+`
+
+type UpdatePostMediaParams struct {
+	ID       int64       `json:"id"`
+	MediaUrl pgtype.Text `json:"media_url"`
+	ThumbUrl pgtype.Text `json:"thumb_url"`
+	Status   PostStatus  `json:"status"`
+}
+
+func (q *Queries) UpdatePostMedia(ctx context.Context, arg UpdatePostMediaParams) error {
+	_, err := q.db.Exec(ctx, updatePostMedia,
+		arg.ID,
+		arg.MediaUrl,
+		arg.ThumbUrl,
+		arg.Status,
+	)
+	return err
+}
+
+const updatePostProgress = `-- name: UpdatePostProgress :exec
 UPDATE posts
 SET status = $1, updated_at = CURRENT_TIMESTAMP
 WHERE id = $2 AND status = 'processing'
 `
 
-type UpdataPostProgressParams struct {
+type UpdatePostProgressParams struct {
 	Status PostStatus `json:"status"`
 	ID     int64      `json:"id"`
 }
 
-func (q *Queries) UpdataPostProgress(ctx context.Context, arg UpdataPostProgressParams) error {
-	_, err := q.db.Exec(ctx, updataPostProgress, arg.Status, arg.ID)
+func (q *Queries) UpdatePostProgress(ctx context.Context, arg UpdatePostProgressParams) error {
+	_, err := q.db.Exec(ctx, updatePostProgress, arg.Status, arg.ID)
 	return err
 }
