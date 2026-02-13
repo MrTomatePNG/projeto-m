@@ -19,7 +19,7 @@ A estrutura do projeto segue o **"Standard Go Project Layout"**, uma convenção
 
 ### `cmd/`
 Contém as aplicações executáveis do projeto. Cada subdiretório representa um ponto de entrada (`main.go`) distinto.
-*   **`cmd/api/`**: É o "entrypoint" para o servidor da API web. É aqui que os servidores HTTP são iniciados, os `workers` do pipeline são "spawnados" e as configurações são carregadas.
+*   **`cmd`**: É o "entrypoint" para o servidor da API web. É aqui que os servidores HTTP são iniciados, os `workers` do pipeline são "spawnados" e as configurações são carregadas.
 
 ### `internal/`
 Destinado a todo o código que é **privado** a este projeto.
