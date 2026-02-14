@@ -20,8 +20,24 @@ services:
     ports:
       - "5432:5432"
 
-    volumes:
-      - ./sql/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d iffuny_droid"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
 
     # Reinicia automaticamente se o container cair
     restart: unless-stopped
+
+  migrate:
+    image: migrate/migrate:v4.18.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        migrate -path /migrations -database "postgres://dev:postgres123@postgres:5432/iffuny_droid?sslmode=disable" up
+    restart: "no"
