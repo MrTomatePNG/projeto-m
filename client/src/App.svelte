@@ -1,296 +1,107 @@
-<script lang="ts">
-    let email = "";
-    let password = "";
-    let accessToken = "";
-    let loading = false;
-    let error = "";
-    let output = "";
+<script>
+    // Aqui você pode definir estados para o conteúdo de cada box
+    // Estados para controlar os modais no Mobile/Tablet
+    let menuEsquerdoAberto = false;
+    let menuDireitoAberto = false;
 
-    const STORAGE_KEY = "memedroid_access_token";
-
-    if (typeof localStorage !== "undefined") {
-        accessToken = localStorage.getItem(STORAGE_KEY) ?? "";
-    }
-
-    async function login() {
-        loading = true;
-        error = "";
-        output = "";
-
-        try {
-            const res = await fetch("/api/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const text = await res.text();
-            if (!res.ok) {
-                error = text || `HTTP ${res.status}`;
-                return;
-            }
-
-            output = text;
-            const data = JSON.parse(text) as { access_token?: string };
-            accessToken = data.access_token ?? "";
-            localStorage.setItem(STORAGE_KEY, accessToken);
-        } catch (e) {
-            error = e instanceof Error ? e.message : "unknown error";
-        } finally {
-            loading = false;
-        }
-    }
-
-    async function me() {
-        loading = true;
-        error = "";
-        output = "";
-
-        try {
-            const res = await fetch("/api/me", {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            });
-
-            const text = await res.text();
-            if (!res.ok) {
-                error = text || `HTTP ${res.status}`;
-                return;
-            }
-
-            output = text;
-        } catch (e) {
-            error = e instanceof Error ? e.message : "unknown error";
-        } finally {
-            loading = false;
-        }
-    }
-
-    function clearToken() {
-        accessToken = "";
-        localStorage.removeItem(STORAGE_KEY);
-    }
+    // Função simples para fechar tudo ao clicar fora (no overlay)
+    const fecharModais = () => {
+        menuEsquerdoAberto = false;
+        menuDireitoAberto = false;
+    };
 </script>
 
-<main>
-    <div class="container">
-        <div class="banner">
-            <strong>Under construction</strong>
-            <span> — página de teste de login</span>
-        </div>
+<main class="app-container">
+    <aside class="area-ranking">
+        <div class="content">Ranking / Mais Comentados</div>
+    </aside>
 
-        <h1>Cauldrun.Fun — Login Test</h1>
-        <p class="hint">
-            A API é acessada via <code>/api/*</code> (Caddy reverse proxy).
-        </p>
+    <aside class="area-user">
+        <div class="content">User Info</div>
+    </aside>
 
-        <section class="card">
-            <h2>Login</h2>
+    <article class="area-main">
+        <nav class="tabs">novidades / aleatorios / seguindo</nav>
+        <div class="scroll-content">Conteúdo scrolável aqui...</div>
+    </article>
 
-            <form
-                on:submit|preventDefault={() => {
-                    void login();
-                }}
-            >
-                <label>
-                    <span>Email</span>
-                    <input
-                        type="email"
-                        bind:value={email}
-                        autocomplete="email"
-                        required
-                    />
-                </label>
+    <aside class="area-notifications">
+        <div class="content">Notificações</div>
+    </aside>
 
-                <label>
-                    <span>Senha</span>
-                    <input
-                        type="password"
-                        bind:value={password}
-                        autocomplete="current-password"
-                        required
-                    />
-                </label>
-
-                <div class="row">
-                    <button type="submit" disabled={loading}>Entrar</button>
-                    <button
-                        type="button"
-                        class="secondary"
-                        on:click={() => void me()}
-                        disabled={loading || !accessToken}
-                    >
-                        Testar /api/me
-                    </button>
-                </div>
-
-                <div class="row">
-                    <button
-                        type="button"
-                        class="danger"
-                        on:click={clearToken}
-                        disabled={loading || !accessToken}
-                    >
-                        Limpar token
-                    </button>
-                </div>
-            </form>
-
-            <div class="token">
-                <div class="tokenHeader">
-                    <span>Token (localStorage)</span>
-                </div>
-                <textarea readonly rows="3" value={accessToken}></textarea>
-            </div>
-
-            {#if error}
-                <pre class="error">{error}</pre>
-            {/if}
-
-            {#if output}
-                <pre class="output">{output}</pre>
-            {/if}
-        </section>
-    </div>
+    <aside class="area-chats">
+        <div class="content">Chats / Grupos</div>
+    </aside>
 </main>
 
-<style>
-    .container {
-        max-width: 720px;
-        margin: 0 auto;
-        padding: 48px 16px;
-    }
+<style lang="scss">
+    // Variáveis para manter o padrão
+    $gap: 10px;
+    $border-radius: 12px;
+    $bg-card: #121212;
+    $border-color: #333;
 
-    .banner {
-        display: inline-flex;
-        gap: 8px;
-        align-items: center;
-        padding: 10px 12px;
-        border-radius: 10px;
-        background: rgba(255, 200, 0, 0.12);
-        border: 1px solid rgba(255, 200, 0, 0.25);
-        color: rgba(255, 255, 255, 0.92);
-        margin-bottom: 18px;
-    }
-
-    h1 {
-        margin: 0 0 8px;
-        font-size: 2.2rem;
-        letter-spacing: -0.02em;
-    }
-
-    .hint {
-        margin: 0 0 20px;
-        opacity: 0.72;
-    }
-
-    .card {
-        padding: 18px;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-    }
-
-    .card h2 {
-        margin: 0 0 12px;
-        font-size: 1.1rem;
-    }
-
-    form {
+    .app-container {
+        // 1. Ocupa a tela toda e trava o scroll
         display: grid;
-        gap: 12px;
+        height: 100vh;
+        width: 100vw;
+        padding: $gap;
+        gap: $gap;
+        overflow: hidden; // Garante que a página não scrolle
+        background-color: #000;
+        box-sizing: border-box;
+
+        // 2. Definindo 3 colunas e 2 linhas
+        // Colunas: laterais fixas e centro flexível (1fr)
+        grid-template-columns: 300px 1fr 300px;
+        grid-template-rows: 1.5fr 1fr;
+
+        // 3. O "Mapa" do seu desenho
+        grid-template-areas:
+            "ranking   main   notif"
+            "user      main   chats";
     }
 
-    label {
-        display: grid;
-        gap: 6px;
-    }
-
-    label span {
-        font-size: 0.9rem;
-        opacity: 0.8;
-    }
-
-    input {
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        background: rgba(0, 0, 0, 0.25);
-        color: white;
-        outline: none;
-    }
-
-    input:focus {
-        border-color: rgba(120, 180, 255, 0.75);
-    }
-
-    .row {
+    // Estilo comum para as caixas (Wireframe)
+    aside,
+    article {
+        background: $bg-card;
+        border: 1px solid $border-color;
+        border-radius: $border-radius;
         display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
+        flex-direction: column;
+        overflow: hidden; // Importante para o conteúdo interno não vazar
     }
 
-    button {
-        cursor: pointer;
-        border-radius: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        padding: 10px 12px;
-        color: white;
-        background: rgba(120, 180, 255, 0.25);
+    // Atribuindo cada classe à sua área no mapa
+    .area-ranking {
+        grid-area: ranking;
+    }
+    .area-user {
+        grid-area: user;
+    }
+    .area-main {
+        grid-area: main;
+    }
+    .area-notifications {
+        grid-area: notif;
+    }
+    .area-chats {
+        grid-area: chats;
     }
 
-    button:disabled {
-        cursor: not-allowed;
-        opacity: 0.6;
-    }
-
-    .secondary {
-        background: rgba(255, 255, 255, 0.08);
-    }
-
-    .danger {
-        background: rgba(255, 80, 80, 0.2);
-        border-color: rgba(255, 80, 80, 0.35);
-    }
-
-    .token {
-        display: grid;
-        gap: 8px;
-        margin-top: 12px;
-    }
-
-    .tokenHeader {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        opacity: 0.8;
-        font-size: 0.9rem;
-    }
-
-    textarea {
-        width: 100%;
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        background: rgba(0, 0, 0, 0.25);
-        color: white;
-        resize: vertical;
-    }
-
-    pre {
-        margin: 12px 0 0;
-        padding: 12px;
-        border-radius: 10px;
-        overflow: auto;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(0, 0, 0, 0.25);
-    }
-
-    .error {
-        border-color: rgba(255, 80, 80, 0.35);
+    // Configurando o scroll interno do centro
+    .area-main {
+        .tabs {
+            padding: 15px;
+            border-bottom: 1px solid $border-color;
+            background: lighten($bg-card, 2%);
+        }
+        .scroll-content {
+            flex: 1; // Ocupa todo o resto da altura
+            overflow-y: auto; // Só aqui tem scroll!
+            padding: 20px;
+        }
     }
 </style>
